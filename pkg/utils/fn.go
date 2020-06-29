@@ -23,8 +23,9 @@ func RandomStr(lengthParam ...int) string {
 	}
 	var res []byte
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	sourceLen := len(bytes)
 	for i := 0; i < length; i++ {
-		res = append(res, bytes[r.Intn(len(bytes))])
+		res = append(res, bytes[r.Intn(sourceLen)])
 	}
 	return string(res)
 }
