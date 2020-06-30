@@ -5,14 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/buffge/wechat"
 	"github.com/buffge/wechat/pkg/base"
 	"github.com/buffge/wechat/pkg/utils"
 )
 
 type (
 	JSSdk struct {
-		App *wechat.PaymentApp
+		App *App
 	}
 	JSPayConfig struct {
 		Timestamp int64         `json:"timestamp"`
@@ -23,6 +22,15 @@ type (
 	}
 )
 
+func (conf *JSPayConfig) GetWxParam(appID string) map[string]string {
+	return map[string]string{
+		"appId":     appID,
+		"timeStamp": strconv.FormatInt(conf.Timestamp, 10),
+		"nonceStr":  conf.NonceStr,
+		"package":   conf.WxPackage,
+		"signType":  string(conf.SignType),
+	}
+}
 func (js *JSSdk) PayConfig(prepayID string) *JSPayConfig {
 	conf := &JSPayConfig{
 		Timestamp: time.Now().Unix(),
@@ -30,16 +38,6 @@ func (js *JSSdk) PayConfig(prepayID string) *JSPayConfig {
 		WxPackage: "prepay_id=" + prepayID,
 		SignType:  base.SignTypeMD5,
 	}
-	conf.PaySign = js.GenerateSign(conf)
+	conf.PaySign = base.GenerateSign(conf.GetWxParam(js.App.AppID), js.App.Key)
 	return conf
-}
-func (js *JSSdk) GenerateSign(conf *JSPayConfig) string {
-	params := map[string]string{
-		"appId":     js.App.AppID,
-		"timeStamp": strconv.FormatInt(conf.Timestamp, 10),
-		"nonceStr":  conf.NonceStr,
-		"package":   conf.WxPackage,
-		"signType":  string(conf.SignType),
-	}
-	return base.GenerateSign(params, js.App.Key)
 }

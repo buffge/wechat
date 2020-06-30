@@ -1,7 +1,9 @@
 package payment
 
 import (
-	"github.com/buffge/wechat"
+	"encoding/xml"
+	"strconv"
+
 	"github.com/buffge/wechat/pkg/base"
 	"github.com/buffge/wechat/pkg/utils"
 )
@@ -9,10 +11,10 @@ import (
 // wx doc https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 type (
 	Order struct {
-		App *wechat.PaymentApp
+		App *App
 	}
 	UnifiedOrderReqData struct {
-		AppID      string         `json:"appID" xml:"app_id" validate:"required,max=32"`
+		AppID      string         `json:"appID" xml:"appid" validate:"required,max=32"`
 		MchID      string         `json:"mchID" xml:"mch_id" validate:"required,max=32"`
 		NonceStr   string         `json:"nonceStr" xml:"nonce_str" validate:"required,max=32"`
 		Sign       string         `json:"sign" xml:"sign" validate:"required,max=32"`
@@ -36,20 +38,84 @@ type (
 		OpenID         string       `json:"openid" xml:"openid" validate:"omitempty,max=128"`
 		Receipt        string       `json:"receipt" xml:"receipt" validate:"omitempty,max=8"`
 		SceneInfo      string       `json:"sceneInfo" xml:"scene_info" validate:"omitempty,max=256"`
+
+		XMLName struct{} `xml:"xml"`
+	}
+	UnifiedOrderRespData struct {
+		ReturnCode string         `xml:"return_code" validate:"required,max=16"`
+		ReturnMsg  string         `xml:"return_msg" validate:"required,max=128"`
+		AppID      string         `xml:"appid,omitempty" validate:"omitempty,max=32"`
+		MchID      string         `xml:"mch_id,omitempty" validate:"omitempty,max=32"`
+		DeviceInfo *string        `xml:"device_info,omitempty" validate:"omitempty,max=32"`
+		NonceStr   string         `xml:"nonce_str,omitempty" validate:"omitempty,max=32"`
+		Sign       string         `xml:"sign,omitempty" validate:"omitempty,max=32"`
+		ResultCode string         `xml:"result_code,omitempty" validate:"omitempty,max=16"`
+		ErrCode    *string        `xml:"err_code,omitempty" validate:"omitempty,max=32"`
+		ErrCodeDes *string        `xml:"err_code_des,omitempty" validate:"omitempty,max=128"`
+		TradeType  base.TradeType `xml:"trade_type,omitempty" validate:"omitempty,oneof=JSAPI,NATIVE,APP,MWEB"`
+		PrepayID   string         `xml:"prepay_id,omitempty" validate:"omitempty,max=64"`
+		// trade_type=NATIVE时有返回，此url用于生成支付二维码，然后提供给用户进行扫码支付
+		CodeURL *string `xml:"code_url,omitempty" validate:"omitempty,max=64"`
+
+		XMLName struct{} `xml:"xml"`
 	}
 )
 
-func (order *Order) UnifiedOrder(d *UnifiedOrderReqData) {
+func (d *UnifiedOrderReqData) GetWXParam() map[string]string {
+	return map[string]string{
+		"appid":            d.AppID,
+		"mch_id":           d.MchID,
+		"device_info":      d.DeviceInfo,
+		"nonce_str":        d.NonceStr,
+		"sign_type":        d.SignType,
+		"body":             d.Body,
+		"detail":           d.Detail,
+		"attach":           d.Attach,
+		"out_trade_no":     d.OutTradeNo,
+		"fee_type":         string(d.FeeType),
+		"total_fee":        strconv.Itoa(int(d.TotalFee)),
+		"spbill_create_ip": d.SpbillCreateIP,
+		"time_start":       d.TimeStart,
+		"time_expire":      d.TimeExpire,
+		"goods_tag":        d.GoodsTag,
+		"notify_url":       d.NotifyURL,
+		"trade_type":       string(d.TradeType),
+		"product_id":       d.ProductID,
+		"limit_pay":        d.LimitPay,
+		"openid":           d.OpenID,
+		"receipt":          d.Receipt,
+		"scene_info":       d.SceneInfo,
+	}
+}
 
+func (order *Order) UnifiedOrder(d *UnifiedOrderReqData) (*UnifiedOrderRespData, error) {
 	app := order.App
+	d.AppID = order.App.AppID
+	d.MchID = order.App.MchID
 	if d.SpbillCreateIP == "" && app.Request != nil {
 		d.SpbillCreateIP = utils.GetClientIP(order.App.Request)
 	}
 	if d.NotifyURL == "" {
 		d.NotifyURL = app.NotifyURL
 	}
-
+	if d.NonceStr == "" {
+		d.NonceStr = utils.RandomStr(32)
+	}
+	d.Sign = base.GenerateSign(d.GetWXParam(), app.Key)
+	body, err := utils.PostXML(order.BuildURL(base.UnifiedOrderEndpoint), d)
+	if err != nil {
+		return nil, err
+	}
+	resp := &UnifiedOrderRespData{}
+	if err := xml.Unmarshal(body, resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
-func (order *Order) Request(p map[string]string) {
-
+func (order *Order) BuildURL(endpoint base.URLEndpoint) string {
+	fmtEndpoint := string(endpoint)
+	if order.App.ISSandbox {
+		fmtEndpoint = base.SandboxPrefix + fmtEndpoint
+	}
+	return string(base.MchBaseURL) + fmtEndpoint
 }

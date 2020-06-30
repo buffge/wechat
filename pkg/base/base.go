@@ -15,6 +15,10 @@ type (
 	TradeType string
 	// 货币类型
 	FeeType string
+	// baseURL
+	APIBaseURL string
+	// 请求路径
+	URLEndpoint string
 )
 
 const (
@@ -39,6 +43,22 @@ const (
 	NoCredit = "no_credit"
 	// 统一下单中 Receipt字段 传入Y时，支付成功消息和支付详情页将出现开票入口
 	ShowReceipt = "Y"
+
+	// 商户平台api
+	MchBaseURL APIBaseURL = "https://api.mch.weixin.qq.com/"
+	// 微信基础api
+	BaseURL APIBaseURL = "https://api.weixin.qq.com/"
+
+	// 统一下单
+	UnifiedOrderEndpoint URLEndpoint = "pay/unifiedorder"
+	AccessTokenEndpoint  URLEndpoint = "cgi-bin/token"
+
+	// 微信调试模式
+	SandboxPrefix = "sandboxnew/"
+
+	RetCodeSuccess = "SUCCESS"
+	ResCodeSuccess = "SUCCESS"
+	ResCodeFailed  = "FAIL"
 )
 
 func GenerateSign(params map[string]string, key string) string {
@@ -59,17 +79,19 @@ func GenerateSign(params map[string]string, key string) string {
 		buf.WriteByte('=')
 		buf.WriteString(params[k])
 	}
-	buf.WriteString("key")
+	buf.WriteString("&key")
 	buf.WriteByte('=')
 	buf.WriteString(key)
 	signType := params["signType"]
 	var sign []byte
 	switch signType {
 	case string(SignTypeMD5):
-		fallthrough
+		m5 := md5.New()
+		_, _ = m5.Write(buf.Bytes())
+		sign = m5.Sum(nil)
 	default:
 		m5 := md5.New()
-		m5.Write(buf.Bytes())
+		_, _ = m5.Write(buf.Bytes())
 		sign = m5.Sum(nil)
 	}
 	return strings.ToUpper(hex.EncodeToString(sign))

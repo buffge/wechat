@@ -16,9 +16,13 @@ type (
 		CertPath  string `json:"certPath"`
 		KeyPath   string `json:"keyPath"`
 		NotifyURL string `json:"notifyURL"`
+		ISSandbox bool   `json:"isSandbox"`
 	}
 )
 
-func (app *App) Req(p map[string]string) *http.Response {
-	return nil
+func NewPayment(conf *Conf, req *http.Request) *App {
+	return &App{
+		Conf:    *conf,
+		Request: req,
+	}
 }
