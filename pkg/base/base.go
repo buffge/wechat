@@ -19,6 +19,8 @@ type (
 	APIBaseURL string
 	// 请求路径
 	URLEndpoint string
+	// 性别
+	Sex string
 )
 
 const (
@@ -39,6 +41,10 @@ const (
 	// 人民币
 	FeeTypeCNY FeeType = "CNY"
 
+	SexUndefined Sex = "0"
+	SexMan       Sex = "1"
+	SexWomen     Sex = "2"
+
 	// 统一下单中 LimitPay字段如果设置此字段则用户不可以用信用卡支付
 	NoCredit = "no_credit"
 	// 统一下单中 Receipt字段 传入Y时，支付成功消息和支付详情页将出现开票入口
@@ -48,10 +54,22 @@ const (
 	MchBaseURL APIBaseURL = "https://api.mch.weixin.qq.com/"
 	// 微信基础api
 	BaseURL APIBaseURL = "https://api.weixin.qq.com/"
+	// 开放平台基础api
+	OpenBaseURL APIBaseURL = "https://open.weixin.qq.com/"
 
 	// 统一下单
 	UnifiedOrderEndpoint URLEndpoint = "pay/unifiedorder"
 	AccessTokenEndpoint  URLEndpoint = "cgi-bin/token"
+	// oauth2 跳转登陆
+	Oauth2Endpoint URLEndpoint = "connect/oauth2/authorize"
+	// oauth2 获取ak
+	Oauth2AccessTokenEndpoint URLEndpoint = "sns/oauth2/access_token"
+	// oauth2 获取用户信息
+	Oauth2GetUserInfoEndpoint URLEndpoint = "sns/userinfo"
+	// 微信公众号获取用户信息
+	GetUserInfoEndpoint URLEndpoint = "cgi-bin/user/info"
+	// 二维码 扫码登陆
+	QrCodeAuthEndpoint URLEndpoint = "connect/qrconnect"
 
 	// 微信调试模式
 	SandboxPrefix = "sandboxnew/"
@@ -59,6 +77,12 @@ const (
 	RetCodeSuccess = "SUCCESS"
 	ResCodeSuccess = "SUCCESS"
 	ResCodeFailed  = "FAIL"
+
+	DefaultLang = "zh-CN"
+
+	// 用户是否订阅了公众号
+	HasSubscribe = 1
+	NotSubscribe = 0
 )
 
 func GenerateSign(params map[string]string, key string) string {
