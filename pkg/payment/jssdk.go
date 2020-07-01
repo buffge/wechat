@@ -22,6 +22,11 @@ type (
 	}
 )
 
+func NewJSSdk(app *App) *JSSdk {
+	return &JSSdk{
+		app,
+	}
+}
 func (conf *JSPayConfig) GetWxParam(appID string) map[string]string {
 	return map[string]string{
 		"appId":     appID,

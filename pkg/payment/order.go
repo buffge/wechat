@@ -11,7 +11,7 @@ import (
 // wx doc https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 type (
 	Order struct {
-		App *App
+		app *App
 	}
 	UnifiedOrderReqData struct {
 		AppID      string         `json:"appID" xml:"appid" validate:"required,max=32"`
@@ -61,6 +61,11 @@ type (
 	}
 )
 
+func NewOrder(app *App) *Order {
+	return &Order{
+		app,
+	}
+}
 func (d *UnifiedOrderReqData) GetWXParam() map[string]string {
 	return map[string]string{
 		"appid":            d.AppID,
@@ -89,11 +94,11 @@ func (d *UnifiedOrderReqData) GetWXParam() map[string]string {
 }
 
 func (order *Order) UnifiedOrder(d *UnifiedOrderReqData) (*UnifiedOrderRespData, error) {
-	app := order.App
-	d.AppID = order.App.AppID
-	d.MchID = order.App.MchID
+	app := order.app
+	d.AppID = order.app.AppID
+	d.MchID = order.app.MchID
 	if d.SpbillCreateIP == "" && app.Request != nil {
-		d.SpbillCreateIP = utils.GetClientIP(order.App.Request)
+		d.SpbillCreateIP = utils.GetClientIP(order.app.Request)
 	}
 	if d.NotifyURL == "" {
 		d.NotifyURL = app.NotifyURL
@@ -114,7 +119,7 @@ func (order *Order) UnifiedOrder(d *UnifiedOrderReqData) (*UnifiedOrderRespData,
 }
 func (order *Order) BuildURL(endpoint base.URLEndpoint) string {
 	fmtEndpoint := string(endpoint)
-	if order.App.ISSandbox {
+	if order.app.ISSandbox {
 		fmtEndpoint = base.SandboxPrefix + fmtEndpoint
 	}
 	return string(base.MchBaseURL) + fmtEndpoint

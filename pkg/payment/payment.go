@@ -8,6 +8,8 @@ type (
 	App struct {
 		Conf
 		Request *http.Request
+		jssdk   *JSSdk
+		order   *Order
 	}
 	Conf struct {
 		AppID     string `json:"appID"`
@@ -25,4 +27,16 @@ func NewPayment(conf *Conf, req *http.Request) *App {
 		Conf:    *conf,
 		Request: req,
 	}
+}
+func (app *App) GetJsSDK() *JSSdk {
+	if app.jssdk == nil {
+		app.jssdk = NewJSSdk(app)
+	}
+	return app.jssdk
+}
+func (app *App) GetOauth() *Order {
+	if app.order == nil {
+		app.order = NewOrder(app)
+	}
+	return app.order
 }

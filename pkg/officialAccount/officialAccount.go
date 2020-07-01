@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/buffge/wechat/pkg/base/cache"
 	"io/ioutil"
 	"net/url"
 	"time"
+
+	"github.com/buffge/wechat/pkg/base/cache"
 
 	"github.com/buffge/wechat/pkg/base"
 	"github.com/buffge/wechat/pkg/utils"
@@ -17,6 +18,7 @@ type (
 	App struct {
 		Conf
 		Cache base.Cache
+		oauth *Oauth
 	}
 	Conf struct {
 		AppID          string `json:"appID"`
@@ -87,4 +89,10 @@ func (app *App) getAccessTokenFormServer() (accessToken string, err error) {
 func (app *App) BuildURL(endpoint base.URLEndpoint) string {
 	fmtEndpoint := string(endpoint)
 	return string(base.BaseURL) + fmtEndpoint
+}
+func (app *App) GetOauth() *Oauth {
+	if app.oauth == nil {
+		app.oauth = NewOauth(app)
+	}
+	return app.oauth
 }
